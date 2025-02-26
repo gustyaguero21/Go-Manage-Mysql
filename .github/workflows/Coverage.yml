@@ -5,26 +5,31 @@ on:
     branches: ["master", "develop"]
 
 jobs:
-  build:
+ test:
     runs-on: ubuntu-latest
+    container: 
+      image: golang:1.23
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.24'
-
-      - name: Build
-        run: go build -v ./...
+      - name: Install dependencies
+        run: go mod tidy
 
       - name: Run tests with coverage
         run: |
-          go test ./... -coverprofile=coverage.out -covermode=atomic
+          if ls *.go 2>/dev/null || find . -type f -name "*.go" | grep .; then
+            go test ./... -coverprofile=coverage.out -covermode=atomic
+          else
+            echo "No Go files found, skipping tests."
+          fi
+
+      - name: Check coverage threshold
+        run: |
           COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print substr($3, 1, length($3)-1)}')
-          echo "Total Coverage: $COVERAGE%"
-          if (( $(echo "$COVERAGE < 85" | bc -l) )); then
-            echo "Coverage is below 85%. Merge blocked."
+          echo "Coverage: $COVERAGE%"
+          if (( $(echo "$COVERAGE < 85.0" | bc -l) )); then
+            echo "Coverage is below 85%! Failing the job."
             exit 1
           fi
