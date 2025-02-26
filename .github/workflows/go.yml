@@ -3,18 +3,16 @@ name: Coverage Test
 on:
   pull_request:
     branches:
-      - master
-      - develop
+      - main
   push:
     branches:
-      - master
-      - develop
+      - main
+
 jobs:
   test:
     runs-on: ubuntu-latest
     container: 
       image: golang:1.24
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -28,13 +26,27 @@ jobs:
             go test ./... -coverprofile=coverage.out -covermode=atomic
           else
             echo "No Go files found, skipping tests."
+            exit 1  
           fi
 
       - name: Check coverage threshold
         run: |
+          if [ ! -f coverage.out ]; then
+            echo "Error: coverage.out file not found!"
+            exit 1  # Falla el job si no se generó cobertura
+          fi
+          
+          cat coverage.out  # Muestra el archivo para debug
           COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print substr($3, 1, length($3)-1)}')
-          echo "Coverage: $COVERAGE%"
+          
+          if [ -z "$COVERAGE" ]; then
+            echo "Error: Could not determine coverage percentage!"
+            exit 1
+          fi
+
+          echo "Coverage detected: $COVERAGE%"
+
           if (( $(echo "$COVERAGE < 85.0" | bc -l) )); then
             echo "Coverage is below 85%! Failing the job."
-            exit 1
+            exit 1  # Aquí fallará el job completo
           fi
