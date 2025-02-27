@@ -3,12 +3,11 @@ name: Coverage Test
 on:
   pull_request:
     branches:
-      - master
-      - develop
+      - main
   push:
     branches:
-      - master
-      - develop
+      - main
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -27,7 +26,7 @@ jobs:
             go test ./... -coverprofile=coverage.out -covermode=atomic
           else
             echo "No Go files found, skipping tests."
-            exit 1  
+            exit 1  # Falla el job si no hay archivos Go
           fi
 
       - name: Check coverage threshold
