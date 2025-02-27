@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"go-manage-mysql/cmd/config"
+	"go-manage-mysql/internal/models"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -13,11 +14,22 @@ func InitDatabase() (*gorm.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error opening database. Error: %w", err)
 	}
+
 	if check := checkExistsDB(db, config.DBName); check != nil {
 		fmt.Println("DATABASE NOT FOUND. CREATING....")
 		if createErr := createDatabase(db, config.DBName); createErr != nil {
 			return nil, createErr
 		}
+
+		db, err = gorm.Open(mysql.Open(config.DsnWithDB), &gorm.Config{})
+		if err != nil {
+			return nil, fmt.Errorf("error reconnecting to database. Error: %w", err)
+		}
+
+		if err := db.AutoMigrate(models.User{}); err != nil {
+			return nil, fmt.Errorf("error migrating user. Error: %w", err)
+		}
+
 	} else {
 		fmt.Println("DATABASE FOUND. CONNECTING....")
 		db, err = gorm.Open(mysql.Open(config.DsnWithDB), &gorm.Config{})
