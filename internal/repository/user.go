@@ -30,7 +30,6 @@ func (r *Repository) Search(username string) (models.User, error) {
 	if result.Error != nil {
 		return models.User{}, result.Error
 	}
-
 	return user, nil
 }
 

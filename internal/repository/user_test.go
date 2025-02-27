@@ -46,11 +46,11 @@ func TestExists(t *testing.T) {
 		{
 			Name:        "Error",
 			Username:    "johndoe",
-			ExpectedErr: fmt.Errorf("record not found"),
+			ExpectedErr: fmt.Errorf("db error"),
 			MockAct: func() {
 				mock.ExpectQuery(config.ExistsTestQuery).
 					WithArgs("johndoe", 1).
-					WillReturnRows(sqlmock.NewRows([]string{"id"}))
+					WillReturnError(fmt.Errorf("db error"))
 			},
 		},
 	}
