@@ -1,14 +1,14 @@
 name: Coverage Test
 
 on:
-    pull_request:
+  pull_request:
     branches:
       - master
       - develop
   push:
     branches:
       - master
-      -develop
+      - develop
 jobs:
   test:
     runs-on: ubuntu-latest
