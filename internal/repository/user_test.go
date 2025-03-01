@@ -28,15 +28,17 @@ func TestExists(t *testing.T) {
 	repo := NewUserRepository(gormDB)
 
 	test := []struct {
-		Name        string
-		Username    string
-		ExpectedErr error
-		MockAct     func()
+		Name         string
+		Username     string
+		ExpectedBool bool
+		ExpectedErr  error
+		MockAct      func()
 	}{
 		{
-			Name:        "Success",
-			Username:    "johndoe",
-			ExpectedErr: nil,
+			Name:         "Success",
+			Username:     "johndoe",
+			ExpectedBool: true,
+			ExpectedErr:  nil,
 			MockAct: func() {
 				mock.ExpectQuery(config.ExistsTestQuery).
 					WithArgs("johndoe", 1).
@@ -44,9 +46,21 @@ func TestExists(t *testing.T) {
 			},
 		},
 		{
-			Name:        "Error",
-			Username:    "johndoe",
-			ExpectedErr: fmt.Errorf("db error"),
+			Name:         "Not Found",
+			Username:     "johndoe",
+			ExpectedBool: false,
+			ExpectedErr:  nil,
+			MockAct: func() {
+				mock.ExpectQuery(config.ExistsTestQuery).
+					WithArgs("johndoe", 1).
+					WillReturnRows(sqlmock.NewRows([]string{"id"}))
+			},
+		},
+		{
+			Name:         "Error",
+			Username:     "johndoe",
+			ExpectedBool: false,
+			ExpectedErr:  fmt.Errorf("db error"),
 			MockAct: func() {
 				mock.ExpectQuery(config.ExistsTestQuery).
 					WithArgs("johndoe", 1).
@@ -59,13 +73,15 @@ func TestExists(t *testing.T) {
 		t.Run(tt.Name, func(t *testing.T) {
 			tt.MockAct()
 
-			exists := repo.Exists(tt.Username)
+			exists, existsErr := repo.Exists(tt.Username)
 
 			if tt.ExpectedErr != nil {
-				assert.EqualError(t, tt.ExpectedErr, exists.Error())
+				assert.EqualError(t, existsErr, tt.ExpectedErr.Error())
 			} else {
-				assert.NoError(t, exists)
+				assert.NoError(t, existsErr)
 			}
+
+			assert.Equal(t, tt.ExpectedBool, exists)
 		})
 	}
 }
