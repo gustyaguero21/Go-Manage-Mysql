@@ -2,20 +2,14 @@ package router
 
 import (
 	"go-manage-mysql/cmd/config"
-	"go-manage-mysql/internal/database"
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
-func UrlMapping(r *gin.Engine) {
+func UrlMapping(r *gin.Engine, conn *gorm.DB) {
 	api := r.Group(config.BaseURL)
-
-	_, err := database.InitDatabase()
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	api.GET("/ping", func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{
