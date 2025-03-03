@@ -9,3 +9,9 @@ type User struct {
 	Email    string `gorm:"type:varchar(255);not null;unique" json:"email"`
 	Password string `gorm:"type:varchar(255);not null" json:"password"`
 }
+
+type UserResponse struct {
+	Message string      `json:"message"`
+	Status  int         `json:"status"`
+	Data    interface{} `json:"data,omitempty"`
+}

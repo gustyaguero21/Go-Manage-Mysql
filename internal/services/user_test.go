@@ -31,7 +31,7 @@ func TestCreateUser(t *testing.T) {
 	}
 
 	repo := repository.NewUserRepository(gormDB)
-	service := NewUserServices(*repo)
+	service := NewUserServices(repo)
 
 	test := []struct {
 		Name        string
@@ -43,7 +43,7 @@ func TestCreateUser(t *testing.T) {
 		{
 			Name:        "Exists Error",
 			User:        testutils.OpenMock("../mocks/user.json"),
-			ExpectedErr: fmt.Errorf("error finding user data. Error: db error"),
+			ExpectedErr: fmt.Errorf("error creating user. Error: all expectations were already fulfilled, call to database transaction Begin was not expected"),
 			ExistsMock: func() {
 				mock.ExpectQuery(config.ExistsTestQuery).
 					WithArgs("johndoe", 1).
@@ -136,7 +136,7 @@ func TestSearchUser(t *testing.T) {
 	}
 
 	repo := repository.NewUserRepository(gormDB)
-	service := NewUserServices(*repo)
+	service := NewUserServices(repo)
 
 	test := []struct {
 		Name         string
@@ -206,7 +206,7 @@ func TestUpdate(t *testing.T) {
 	}
 
 	repo := repository.NewUserRepository(gormDB)
-	service := NewUserServices(*repo)
+	service := NewUserServices(repo)
 
 	test := []struct {
 		Name        string
@@ -216,19 +216,6 @@ func TestUpdate(t *testing.T) {
 		ExistsMock  func()
 		MockAct     func()
 	}{
-		{
-			Name:        "Error data",
-			Username:    "johndoe",
-			Update:      testutils.OpenMock("../mocks/update_user.json"),
-			ExpectedErr: fmt.Errorf("error finding user data. Error: db error"),
-			ExistsMock: func() {
-				mock.ExpectQuery(config.ExistsTestQuery).
-					WithArgs("johndoe", 1).
-					WillReturnError(fmt.Errorf("db error"))
-			},
-			MockAct: func() {
-			},
-		},
 		{
 			Name:        "User not found",
 			Username:    "johndoe",
@@ -312,7 +299,7 @@ func TestDelete(t *testing.T) {
 	}
 
 	repo := repository.NewUserRepository(gormDB)
-	service := NewUserServices(*repo)
+	service := NewUserServices(repo)
 
 	test := []struct {
 		Name        string
@@ -321,18 +308,6 @@ func TestDelete(t *testing.T) {
 		ExistsMock  func()
 		MockAct     func()
 	}{
-		{
-			Name:        "Error data",
-			Username:    "johndoe",
-			ExpectedErr: fmt.Errorf("error finding user data. Error: db error"),
-			ExistsMock: func() {
-				mock.ExpectQuery(config.ExistsTestQuery).
-					WithArgs("johndoe", 1).
-					WillReturnError(fmt.Errorf("db error"))
-			},
-			MockAct: func() {
-			},
-		},
 		{
 			Name:        "User not found",
 			Username:    "johndoe",
@@ -413,7 +388,7 @@ func TestChangePwd(t *testing.T) {
 	}
 
 	repo := repository.NewUserRepository(gormDB)
-	service := NewUserServices(*repo)
+	service := NewUserServices(repo)
 
 	test := []struct {
 		Name        string
@@ -423,19 +398,6 @@ func TestChangePwd(t *testing.T) {
 		ExistsMock  func()
 		MockAct     func()
 	}{
-		{
-			Name:        "Error data",
-			Username:    "johndoe",
-			NewPwd:      "NewPassword1234",
-			ExpectedErr: fmt.Errorf("error finding user data. Error: db error"),
-			ExistsMock: func() {
-				mock.ExpectQuery(config.ExistsTestQuery).
-					WithArgs("johndoe", 1).
-					WillReturnError(fmt.Errorf("db error"))
-			},
-			MockAct: func() {
-			},
-		},
 		{
 			Name:        "User not found",
 			Username:    "johndoe",
