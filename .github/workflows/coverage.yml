@@ -14,6 +14,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Fix Git safe directory issue
+        run: git config --global --add safe.directory /__w/Go-Manage-Mysql/Go-Manage-Mysql
+
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
