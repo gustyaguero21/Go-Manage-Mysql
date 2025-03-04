@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"errors"
 	"fmt"
 	"go-manage-mysql/internal/models"
 
@@ -16,16 +15,11 @@ func NewUserRepository(db *gorm.DB) *Repository {
 	return &Repository{DB: db}
 }
 
-func (r *Repository) Exists(username string) (bool, error) {
+func (r *Repository) Exists(username string) bool {
 	var user models.User
 	err := r.DB.Where("username = ?", username).First(&user).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, nil
-		}
-		return false, err
-	}
-	return true, nil
+
+	return err == nil
 }
 
 func (r *Repository) Search(username string) (models.User, error) {

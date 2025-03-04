@@ -1,11 +1,14 @@
 package router
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+)
 
-func SetupRouter() *gin.Engine {
+func SetupRouter(conn *gorm.DB) *gin.Engine {
 	router := gin.Default()
 
-	UrlMapping(router)
+	UrlMapping(router, conn)
 
 	return router
 }
