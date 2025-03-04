@@ -12,18 +12,15 @@ import (
 )
 
 type Services struct {
-	Repo repository.Repository
+	Repo repository.UserRepository
 }
 
-func NewUserServices(repo repository.Repository) *Services {
+func NewUserServices(repo repository.UserRepository) *Services {
 	return &Services{Repo: repo}
 }
 
 func (s *Services) CreateUser(ctx context.Context, user models.User) (created models.User, err error) {
-	exists, existsErr := s.Repo.Exists(user.Username)
-	if existsErr != nil {
-		return models.User{}, apperror.AppError("error finding user data", existsErr)
-	}
+	exists := s.Repo.Exists(user.Username)
 	if exists {
 		return models.User{}, fmt.Errorf("user already exists")
 	}
@@ -53,10 +50,7 @@ func (s *Services) SearchUser(ctx context.Context, username string) (user models
 }
 
 func (s *Services) UpdateUser(ctx context.Context, username string, update models.User) (err error) {
-	exists, existsErr := s.Repo.Exists(username)
-	if existsErr != nil {
-		return apperror.AppError("error finding user data", existsErr)
-	}
+	exists := s.Repo.Exists(username)
 	if !exists {
 		return fmt.Errorf("user not found")
 	}
@@ -69,10 +63,8 @@ func (s *Services) UpdateUser(ctx context.Context, username string, update model
 }
 
 func (s *Services) DeleteUser(ctx context.Context, username string) (err error) {
-	exists, existsErr := s.Repo.Exists(username)
-	if existsErr != nil {
-		return apperror.AppError("error finding user data", existsErr)
-	}
+	exists := s.Repo.Exists(username)
+
 	if !exists {
 		return fmt.Errorf("user not found")
 	}
@@ -83,16 +75,18 @@ func (s *Services) DeleteUser(ctx context.Context, username string) (err error) 
 }
 
 func (s *Services) ChangeUserPwd(ctx context.Context, username string, newPwd string) (err error) {
-	exists, existsErr := s.Repo.Exists(username)
-	if existsErr != nil {
-		return apperror.AppError("error finding user data", existsErr)
-	}
+	exists := s.Repo.Exists(username)
 
 	if !exists {
 		return fmt.Errorf("user not found")
 	}
 
-	if changeErr := s.Repo.ChangePwd(username, newPwd); changeErr != nil {
+	hash, hashErr := encrypter.PasswordEncrypter(newPwd)
+	if hashErr != nil {
+		return hashErr
+	}
+
+	if changeErr := s.Repo.ChangePwd(username, string(hash)); changeErr != nil {
 		return apperror.AppError("error changing user password", changeErr)
 	}
 

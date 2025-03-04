@@ -31,14 +31,12 @@ func TestExists(t *testing.T) {
 		Name         string
 		Username     string
 		ExpectedBool bool
-		ExpectedErr  error
 		MockAct      func()
 	}{
 		{
 			Name:         "Success",
 			Username:     "johndoe",
 			ExpectedBool: true,
-			ExpectedErr:  nil,
 			MockAct: func() {
 				mock.ExpectQuery(config.ExistsTestQuery).
 					WithArgs("johndoe", 1).
@@ -49,7 +47,6 @@ func TestExists(t *testing.T) {
 			Name:         "Not Found",
 			Username:     "johndoe",
 			ExpectedBool: false,
-			ExpectedErr:  nil,
 			MockAct: func() {
 				mock.ExpectQuery(config.ExistsTestQuery).
 					WithArgs("johndoe", 1).
@@ -60,7 +57,6 @@ func TestExists(t *testing.T) {
 			Name:         "Error",
 			Username:     "johndoe",
 			ExpectedBool: false,
-			ExpectedErr:  fmt.Errorf("db error"),
 			MockAct: func() {
 				mock.ExpectQuery(config.ExistsTestQuery).
 					WithArgs("johndoe", 1).
@@ -73,13 +69,9 @@ func TestExists(t *testing.T) {
 		t.Run(tt.Name, func(t *testing.T) {
 			tt.MockAct()
 
-			exists, existsErr := repo.Exists(tt.Username)
+			exists := repo.Exists(tt.Username)
 
-			if tt.ExpectedErr != nil {
-				assert.EqualError(t, existsErr, tt.ExpectedErr.Error())
-			} else {
-				assert.NoError(t, existsErr)
-			}
+			assert.Equal(t, tt.ExpectedBool, exists)
 
 			assert.Equal(t, tt.ExpectedBool, exists)
 		})
