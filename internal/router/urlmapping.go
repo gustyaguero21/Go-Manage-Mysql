@@ -26,7 +26,7 @@ func UrlMapping(r *gin.Engine, conn *gorm.DB) {
 
 	api.POST("/create", handler.CreateUserHandler)
 	api.GET("/search", handler.SearchUserHandler)
-	api.PATCH("/update", handler.UpdataUserHandler)
+	api.PATCH("/update", handler.UpdateUserHandler)
 	api.DELETE("/delete", handler.DeleteUserHandler)
-
+	api.PATCH("/change-password", handler.ChangePwdHandler)
 }

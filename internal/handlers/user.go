@@ -20,7 +20,6 @@ func NewUserHandler(service services.UserServices) *Handler {
 
 func (h *Handler) CreateUserHandler(ctx *gin.Context) {
 	ctx.Header("Content-Type", "application/json")
-	ctx.Set("Timeout", 5)
 
 	var user models.User
 
@@ -40,12 +39,11 @@ func (h *Handler) CreateUserHandler(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, usersResponse("user created successfully", http.StatusCreated, create))
+	ctx.JSON(http.StatusCreated, usersResponse("user created successfully", http.StatusCreated, create))
 }
 
 func (h *Handler) SearchUserHandler(ctx *gin.Context) {
 	ctx.Header("Content-Type", "application/json")
-	ctx.Set("Timeout", 5)
 
 	username := ctx.Query("username")
 	if username == "" {
@@ -62,9 +60,8 @@ func (h *Handler) SearchUserHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, usersResponse("user found", http.StatusOK, search))
 }
 
-func (h *Handler) UpdataUserHandler(ctx *gin.Context) {
+func (h *Handler) UpdateUserHandler(ctx *gin.Context) {
 	ctx.Header("Content-Type", "application/json")
-	ctx.Set("Timeout", 5)
 
 	var update models.User
 
@@ -94,6 +91,8 @@ func (h *Handler) UpdataUserHandler(ctx *gin.Context) {
 }
 
 func (h *Handler) DeleteUserHandler(ctx *gin.Context) {
+	ctx.Header("Content-Type", "application/json")
+
 	username := ctx.Query("username")
 	if username == "" {
 		web.NewError(ctx, http.StatusBadRequest, "invalid query param")
@@ -106,6 +105,24 @@ func (h *Handler) DeleteUserHandler(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, usersResponse("user deleted successfully", http.StatusOK, nil))
+}
+
+func (h *Handler) ChangePwdHandler(ctx *gin.Context) {
+	ctx.Header("Content-Type", "application/json")
+
+	username := ctx.Query("username")
+	newPassword := ctx.Query("new_password")
+	if username == "" || newPassword == "" {
+		web.NewError(ctx, http.StatusBadRequest, "invalid query param")
+		return
+	}
+
+	if changeErr := h.Service.ChangeUserPwd(ctx, username, newPassword); changeErr != nil {
+		web.NewError(ctx, http.StatusInternalServerError, changeErr.Error())
+		return
+	}
+
+	ctx.JSON(http.StatusOK, usersResponse("password changed successfully", http.StatusOK, nil))
 }
 
 func usersResponse(msg string, status int, data interface{}) models.UserResponse {

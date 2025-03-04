@@ -81,7 +81,12 @@ func (s *Services) ChangeUserPwd(ctx context.Context, username string, newPwd st
 		return fmt.Errorf("user not found")
 	}
 
-	if changeErr := s.Repo.ChangePwd(username, newPwd); changeErr != nil {
+	hash, hashErr := encrypter.PasswordEncrypter(newPwd)
+	if hashErr != nil {
+		return hashErr
+	}
+
+	if changeErr := s.Repo.ChangePwd(username, string(hash)); changeErr != nil {
 		return apperror.AppError("error changing user password", changeErr)
 	}
 
