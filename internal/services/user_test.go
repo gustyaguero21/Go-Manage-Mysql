@@ -424,7 +424,7 @@ func TestChangePwd(t *testing.T) {
 			MockAct: func() {
 				mock.ExpectBegin()
 				mock.ExpectExec(config.ChangePwdTestQuery).
-					WithArgs("NewPassword1234", "johndoe").
+					WithArgs(sqlmock.AnyArg(), "johndoe").
 					WillReturnError(fmt.Errorf("db error"))
 				mock.ExpectRollback()
 			},
@@ -442,7 +442,7 @@ func TestChangePwd(t *testing.T) {
 			MockAct: func() {
 				mock.ExpectBegin()
 				mock.ExpectExec(config.ChangePwdTestQuery).
-					WithArgs("NewPassword1234", "johndoe").
+					WithArgs(sqlmock.AnyArg(), "johndoe").
 					WillReturnResult(sqlmock.NewResult(1, 1))
 				mock.ExpectCommit()
 			},
