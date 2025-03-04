@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"go-manage-mysql/cmd/config"
 	"go-manage-mysql/internal/models"
 	"go-manage-mysql/internal/repository"
 
@@ -20,9 +21,8 @@ func NewUserServices(repo repository.UserRepository) *Services {
 }
 
 func (s *Services) CreateUser(ctx context.Context, user models.User) (created models.User, err error) {
-	exists := s.Repo.Exists(user.Username)
-	if exists {
-		return models.User{}, fmt.Errorf("user already exists")
+	if err := s.exists(user.Username); err != nil {
+		return models.User{}, err
 	}
 
 	user.ID = uuid.NewString()
@@ -34,7 +34,7 @@ func (s *Services) CreateUser(ctx context.Context, user models.User) (created mo
 	user.Password = string(hash)
 
 	if err := s.Repo.Save(user); err != nil {
-		return models.User{}, apperror.AppError("error creating user", err)
+		return models.User{}, apperror.AppError(config.ErrCreatingUser, err)
 	}
 
 	return user, nil
@@ -43,42 +43,38 @@ func (s *Services) CreateUser(ctx context.Context, user models.User) (created mo
 func (s *Services) SearchUser(ctx context.Context, username string) (user models.User, err error) {
 	search, searchErr := s.Repo.Search(username)
 	if searchErr != nil {
-		return models.User{}, apperror.AppError("error searching user", searchErr)
+		return models.User{}, apperror.AppError(config.ErrSearchingUser, searchErr)
 	}
 
 	return search, nil
 }
 
 func (s *Services) UpdateUser(ctx context.Context, username string, update models.User) (err error) {
-	exists := s.Repo.Exists(username)
-	if !exists {
-		return fmt.Errorf("user not found")
+	if err := s.ensureExists(username); err != nil {
+		return err
 	}
 
 	if updateErr := s.Repo.Update(username, update); updateErr != nil {
-		return apperror.AppError("error updating user data", updateErr)
+		return apperror.AppError(config.ErrUpdatingUser, updateErr)
 	}
 
 	return nil
 }
 
 func (s *Services) DeleteUser(ctx context.Context, username string) (err error) {
-	exists := s.Repo.Exists(username)
-
-	if !exists {
-		return fmt.Errorf("user not found")
+	if err := s.ensureExists(username); err != nil {
+		return err
 	}
+
 	if deleteErr := s.Repo.Delete(username); deleteErr != nil {
-		return apperror.AppError("error deleting user data", deleteErr)
+		return apperror.AppError(config.ErrDeletingUser, deleteErr)
 	}
 	return nil
 }
 
 func (s *Services) ChangeUserPwd(ctx context.Context, username string, newPwd string) (err error) {
-	exists := s.Repo.Exists(username)
-
-	if !exists {
-		return fmt.Errorf("user not found")
+	if err := s.ensureExists(username); err != nil {
+		return err
 	}
 
 	hash, hashErr := encrypter.PasswordEncrypter(newPwd)
@@ -87,8 +83,24 @@ func (s *Services) ChangeUserPwd(ctx context.Context, username string, newPwd st
 	}
 
 	if changeErr := s.Repo.ChangePwd(username, string(hash)); changeErr != nil {
-		return apperror.AppError("error changing user password", changeErr)
+		return apperror.AppError(config.ErrChangingPwd, changeErr)
 	}
 
+	return nil
+}
+
+func (s *Services) exists(username string) error {
+	exists := s.Repo.Exists(username)
+	if exists {
+		return fmt.Errorf(config.ErrUserAlreadyExists)
+	}
+	return nil
+}
+
+func (s *Services) ensureExists(username string) error {
+	exists := s.Repo.Exists(username)
+	if !exists {
+		return fmt.Errorf(config.ErrUserNotFound)
+	}
 	return nil
 }
