@@ -32,6 +32,9 @@ jobs:
           echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
           echo "Current PR coverage: $COVERAGE%"
 
+      - name: Mark repo as safe
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
       - name: Checkout base branch
         run: |
           git fetch origin ${{ github.base_ref }} --depth=1
