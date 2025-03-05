@@ -43,7 +43,7 @@ func TestValidateData(t *testing.T) {
 				Surname:  "Doe",
 				Username: "johndoe",
 				Phone:    "123456789",
-				Email:    "invalid-email", // Email inválido para prueba
+				Email:    "invalid-email",
 				Password: "StrongP@ssw0rd2024!",
 			},
 			requiredFields: []string{"name", "surname", "username", "phone", "email", "password"},
@@ -57,7 +57,7 @@ func TestValidateData(t *testing.T) {
 				Username: "johndoe",
 				Phone:    "123456789",
 				Email:    "johndoe@example.com",
-				Password: "123", // Contraseña débil para la prueba
+				Password: "123",
 			},
 			requiredFields: []string{"name", "surname", "username", "phone", "email", "password"},
 			expectError:    true,
