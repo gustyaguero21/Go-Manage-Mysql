@@ -125,6 +125,19 @@ func (h *Handler) ChangePwdHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, usersResponse("password changed successfully", http.StatusOK, nil))
 }
 
+func (h *Handler) LoginUserHandler(ctx *gin.Context) {
+	ctx.Header("Content-Type", "application/json")
+
+	username := ctx.Query("username")
+	password := ctx.Query("password")
+
+	if username == "" || password == "" {
+		web.NewError(ctx, http.StatusBadRequest, "invalid query params")
+		return
+	}
+
+}
+
 func usersResponse(msg string, status int, data interface{}) models.UserResponse {
 	return models.UserResponse{
 		Message: msg,
