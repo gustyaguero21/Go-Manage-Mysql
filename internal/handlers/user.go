@@ -128,14 +128,25 @@ func (h *Handler) ChangePwdHandler(ctx *gin.Context) {
 func (h *Handler) LoginUserHandler(ctx *gin.Context) {
 	ctx.Header("Content-Type", "application/json")
 
-	username := ctx.Query("username")
-	password := ctx.Query("password")
+	var user models.User
 
-	if username == "" || password == "" {
-		web.NewError(ctx, http.StatusBadRequest, "invalid query params")
+	if err := ctx.ShouldBindJSON(&user); err != nil {
+		web.NewError(ctx, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
+	if user.Username == "" || user.Password == "" {
+		web.NewError(ctx, http.StatusBadRequest, "username and password are required")
+		return
+	}
+
+	err := h.Service.LoginUser(ctx, user.Username, user.Password)
+	if err != nil {
+		web.NewError(ctx, http.StatusUnauthorized, "invalid credentials. Please check username & password")
+		return
+	}
+
+	ctx.JSON(http.StatusOK, usersResponse("WELCOME "+user.Username, http.StatusOK, nil))
 }
 
 func usersResponse(msg string, status int, data interface{}) models.UserResponse {
