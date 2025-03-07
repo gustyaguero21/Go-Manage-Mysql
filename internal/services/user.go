@@ -116,7 +116,7 @@ func (s *Services) LoginUser(ctx context.Context, username, password string) err
 	}
 
 	if !exist {
-		return apperror.AppError(config.ErrUserNotFound, nil)
+		return apperror.AppError(config.ErrUserNotFound, gorm.ErrRecordNotFound)
 	}
 
 	search, searchErr := s.Repo.Search(username)

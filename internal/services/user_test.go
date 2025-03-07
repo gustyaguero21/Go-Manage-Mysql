@@ -546,7 +546,7 @@ func TestLogin(t *testing.T) {
 			Name:        "User not found",
 			Username:    "johndoe",
 			Password:    "Password1234",
-			ExpectedErr: apperror.AppError(config.ErrUserNotFound, nil),
+			ExpectedErr: apperror.AppError(config.ErrUserNotFound, gorm.ErrRecordNotFound),
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).

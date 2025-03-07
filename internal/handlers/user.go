@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"errors"
+	"go-manage-mysql/cmd/config"
 	"go-manage-mysql/internal/models"
 	"go-manage-mysql/internal/services"
 	"go-manage-mysql/internal/utils/validator"
@@ -8,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gustyaguero21/go-core/pkg/web"
+	"gorm.io/gorm"
 )
 
 type Handler struct {
@@ -27,8 +30,8 @@ func (h *Handler) CreateUserHandler(ctx *gin.Context) {
 		web.NewError(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
-	validateFields := []string{"name", "surname", "username", "phone", "email", "password"}
-	if validate := validator.ValidateData(user, validateFields); validate != nil {
+
+	if validate := validator.ValidateData(user, config.Create_ValidateFields); validate != nil {
 		web.NewError(ctx, http.StatusBadRequest, validate.Error())
 		return
 	}
@@ -39,7 +42,7 @@ func (h *Handler) CreateUserHandler(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, usersResponse("user created successfully", http.StatusCreated, create))
+	ctx.JSON(http.StatusCreated, usersResponse(config.CreatedUserMessage, http.StatusCreated, create))
 }
 
 func (h *Handler) SearchUserHandler(ctx *gin.Context) {
@@ -47,7 +50,7 @@ func (h *Handler) SearchUserHandler(ctx *gin.Context) {
 
 	username := ctx.Query("username")
 	if username == "" {
-		web.NewError(ctx, http.StatusBadRequest, "invalid query param")
+		web.NewError(ctx, http.StatusBadRequest, config.ErrInvalidQueryParam)
 		return
 	}
 
@@ -57,7 +60,7 @@ func (h *Handler) SearchUserHandler(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, usersResponse("user found", http.StatusOK, search))
+	ctx.JSON(http.StatusOK, usersResponse(config.SearchUserMessage, http.StatusOK, search))
 }
 
 func (h *Handler) UpdateUserHandler(ctx *gin.Context) {
@@ -67,7 +70,7 @@ func (h *Handler) UpdateUserHandler(ctx *gin.Context) {
 
 	username := ctx.Query("username")
 	if username == "" {
-		web.NewError(ctx, http.StatusBadRequest, "invalid query param")
+		web.NewError(ctx, http.StatusBadRequest, config.ErrInvalidQueryParam)
 		return
 	}
 
@@ -76,8 +79,7 @@ func (h *Handler) UpdateUserHandler(ctx *gin.Context) {
 		return
 	}
 
-	validateFields := []string{"name", "surname", "phone", "email"}
-	if validate := validator.ValidateData(update, validateFields); validate != nil {
+	if validate := validator.ValidateData(update, config.Update_ValidateFields); validate != nil {
 		web.NewError(ctx, http.StatusBadRequest, validate.Error())
 		return
 	}
@@ -87,7 +89,7 @@ func (h *Handler) UpdateUserHandler(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, usersResponse("user updated successfully", http.StatusOK, nil))
+	ctx.JSON(http.StatusOK, usersResponse(config.UpdateUserMessage, http.StatusOK, nil))
 }
 
 func (h *Handler) DeleteUserHandler(ctx *gin.Context) {
@@ -95,7 +97,7 @@ func (h *Handler) DeleteUserHandler(ctx *gin.Context) {
 
 	username := ctx.Query("username")
 	if username == "" {
-		web.NewError(ctx, http.StatusBadRequest, "invalid query param")
+		web.NewError(ctx, http.StatusBadRequest, config.ErrInvalidQueryParam)
 		return
 	}
 
@@ -104,7 +106,7 @@ func (h *Handler) DeleteUserHandler(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, usersResponse("user deleted successfully", http.StatusOK, nil))
+	ctx.JSON(http.StatusOK, usersResponse(config.DeleteUserMessage, http.StatusOK, nil))
 }
 
 func (h *Handler) ChangePwdHandler(ctx *gin.Context) {
@@ -113,7 +115,7 @@ func (h *Handler) ChangePwdHandler(ctx *gin.Context) {
 	username := ctx.Query("username")
 	newPassword := ctx.Query("new_password")
 	if username == "" || newPassword == "" {
-		web.NewError(ctx, http.StatusBadRequest, "invalid query param")
+		web.NewError(ctx, http.StatusBadRequest, config.ErrInvalidQueryParam)
 		return
 	}
 
@@ -122,7 +124,7 @@ func (h *Handler) ChangePwdHandler(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, usersResponse("password changed successfully", http.StatusOK, nil))
+	ctx.JSON(http.StatusOK, usersResponse(config.ChangePwdMessage, http.StatusOK, nil))
 }
 
 func (h *Handler) LoginUserHandler(ctx *gin.Context) {
@@ -136,14 +138,19 @@ func (h *Handler) LoginUserHandler(ctx *gin.Context) {
 	}
 
 	if user.Username == "" || user.Password == "" {
-		web.NewError(ctx, http.StatusBadRequest, "username and password are required")
+		web.NewError(ctx, http.StatusBadRequest, config.ErrAllFieldsAreRequired)
 		return
 	}
 
 	err := h.Service.LoginUser(ctx, user.Username, user.Password)
 	if err != nil {
-		web.NewError(ctx, http.StatusUnauthorized, "invalid credentials. Please check username & password")
-		return
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			web.NewError(ctx, http.StatusNotFound, config.ErrUserNotFound)
+			return
+		} else {
+			web.NewError(ctx, http.StatusUnauthorized, config.ErrUnauthorizedUser)
+			return
+		}
 	}
 
 	ctx.JSON(http.StatusOK, usersResponse("WELCOME "+user.Username, http.StatusOK, nil))
