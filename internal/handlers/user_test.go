@@ -14,6 +14,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/assert/v2"
+	"github.com/gustyaguero21/go-core/pkg/encrypter"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -59,7 +60,7 @@ func TestCreateUserHandler(t *testing.T) {
 			}`,
 			ExpectedCode: http.StatusCreated,
 			ExistsMock: func() {
-				mock.ExpectQuery(config.ExistsTestQuery).
+				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
 					WillReturnRows(sqlmock.NewRows([]string{"id"}))
 			},
@@ -262,7 +263,7 @@ func TestUpdate(t *testing.T) {
 			}`,
 			ExpectedCode: http.StatusOK,
 			ExistsMock: func() {
-				mock.ExpectQuery(config.ExistsTestQuery).
+				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
 					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "surname", "username", "phone", "email", "password"}).
 						AddRow(1, "John", "Doe", "johndoe", "1234567890", "johndoe@example.com", "Password1234"))
@@ -287,7 +288,7 @@ func TestUpdate(t *testing.T) {
 			}`,
 			ExpectedCode: http.StatusInternalServerError,
 			ExistsMock: func() {
-				mock.ExpectQuery(config.ExistsTestQuery).
+				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
 					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "surname", "username", "phone", "email", "password"}).
 						AddRow(1, "John", "Doe", "johndoe", "1234567890", "johndoe@example.com", "Password1234"))
@@ -357,7 +358,7 @@ func TestDelete(t *testing.T) {
 			Username:     "johndoe",
 			ExpectedCode: http.StatusOK,
 			ExistsMock: func() {
-				mock.ExpectQuery(config.ExistsTestQuery).
+				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
 					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "surname", "username", "email", "password"}).
 						AddRow(1, "John", "Doe", "johndoe", "johndoe@example.com", "Password1234"))
@@ -375,7 +376,7 @@ func TestDelete(t *testing.T) {
 			Username:     "johndoe",
 			ExpectedCode: http.StatusInternalServerError,
 			ExistsMock: func() {
-				mock.ExpectQuery(config.ExistsTestQuery).
+				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
 					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "surname", "username", "email", "password"}).
 						AddRow(1, "John", "Doe", "johndoe", "johndoe@example.com", "Password1234"))
@@ -448,7 +449,7 @@ func TestChangePwdHandler(t *testing.T) {
 			Password:     "NewPassword1234",
 			ExpectedCode: http.StatusOK,
 			ExistsMock: func() {
-				mock.ExpectQuery(config.ExistsTestQuery).
+				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
 					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "surname", "username", "email", "password"}).
 						AddRow(1, "John", "Doe", "johndoe", "johndoe@example.com", "Password1234"))
@@ -467,7 +468,7 @@ func TestChangePwdHandler(t *testing.T) {
 			Password:     "NewPassword1234",
 			ExpectedCode: http.StatusInternalServerError,
 			ExistsMock: func() {
-				mock.ExpectQuery(config.ExistsTestQuery).
+				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
 					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "surname", "username", "email", "password"}).
 						AddRow(1, "John", "Doe", "johndoe", "johndoe@example.com", "Password1234"))
@@ -485,6 +486,129 @@ func TestChangePwdHandler(t *testing.T) {
 			url := fmt.Sprintf("/change-password?username=%s&new_password=%s", tt.Username, tt.Password)
 
 			req, _ := http.NewRequest(http.MethodPatch, url, nil)
+
+			w := httptest.NewRecorder()
+
+			r.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.ExpectedCode, w.Code)
+		})
+	}
+}
+
+func TestLoginUserHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	gormDB, gormErr := gorm.Open(mysql.New(mysql.Config{Conn: db, SkipInitializeWithVersion: true}), &gorm.Config{})
+	if gormErr != nil {
+		t.Fatal(gormErr)
+	}
+
+	repo := repository.NewUserRepository(gormDB)
+	service := services.NewUserServices(repo)
+	handler := NewUserHandler(service)
+
+	r := gin.Default()
+	r.POST("/login", handler.LoginUserHandler)
+
+	test := []struct {
+		Name         string
+		Body         string
+		ExpectedCode int
+		ExistsMock   func()
+		MockAct      func()
+	}{
+		{
+			Name: "Invalid Request",
+			Body: `{
+				"username": "johndoe",
+				"password":"Password1234",
+			}`,
+			ExpectedCode: http.StatusBadRequest,
+			ExistsMock: func() {
+			},
+			MockAct: func() {
+			},
+		},
+		{
+			Name: "Invalid Query Param",
+			Body: `{
+				"username": "johndoe",
+				"password":""
+			}`,
+			ExpectedCode: http.StatusBadRequest,
+			ExistsMock: func() {
+			},
+			MockAct: func() {
+			},
+		},
+		{
+			Name: "User Not Found",
+			Body: `{
+				"username": "johndoe",
+				"password":"Password1234"
+			}`,
+			ExpectedCode: http.StatusNotFound,
+			ExistsMock: func() {
+				mock.ExpectQuery(config.SearchTestQuery).
+					WithArgs("johndoe", 1).
+					WillReturnRows(sqlmock.NewRows([]string{"id"}))
+			},
+			MockAct: func() {
+			},
+		},
+		{
+			Name: "Unauthorized",
+			Body: `{
+				"username": "johndoe",
+				"password":"Password1234"
+			}`,
+			ExpectedCode: http.StatusUnauthorized,
+			ExistsMock: func() {
+				mock.ExpectQuery(config.SearchTestQuery).
+					WithArgs("johndoe", 1).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "surname", "username", "email", "password"}).
+						AddRow(1, "John", "Doe", "johndoe", "johndoe@example.com", "Password1234"))
+			},
+			MockAct: func() {
+			},
+		},
+		{
+			Name: "Success",
+			Body: `{
+				"username": "johndoe",
+				"password":"Password1234"
+			}`,
+			ExpectedCode: http.StatusOK,
+			ExistsMock: func() {
+				mock.ExpectQuery(config.SearchTestQuery).
+					WithArgs("johndoe", 1).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "surname", "username", "email", "password"}).
+						AddRow(1, "John", "Doe", "johndoe", "johndoe@example.com", "Password1234"))
+			},
+			MockAct: func() {
+				hashedPwd, _ := encrypter.PasswordEncrypter("Password1234")
+
+				mock.ExpectQuery(config.SearchTestQuery).
+					WithArgs("johndoe", 1).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "password"}).
+						AddRow(1, hashedPwd))
+			},
+		},
+	}
+
+	for _, tt := range test {
+		t.Run(tt.Name, func(t *testing.T) {
+			tt.ExistsMock()
+			tt.MockAct()
+
+			req, _ := http.NewRequest(http.MethodPost, "/login", bytes.NewBufferString(tt.Body))
 
 			w := httptest.NewRecorder()
 
