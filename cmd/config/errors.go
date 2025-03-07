@@ -14,6 +14,7 @@ const (
 	ErrPwdMatching          = "passwords doesnt match"
 	ErrDbError              = "db error"
 	ErrInvalidQueryParam    = "invalid query param"
+	ErrInvalidBody          = "invalid request body"
 	ErrAllFieldsAreRequired = "all fields are required"
 	ErrUnauthorizedUser     = "invalid credentials. Please check username & password"
 )

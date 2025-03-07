@@ -133,7 +133,7 @@ func (h *Handler) LoginUserHandler(ctx *gin.Context) {
 	var user models.User
 
 	if err := ctx.ShouldBindJSON(&user); err != nil {
-		web.NewError(ctx, http.StatusBadRequest, "invalid request body")
+		web.NewError(ctx, http.StatusBadRequest, config.ErrInvalidBody)
 		return
 	}
 
