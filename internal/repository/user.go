@@ -15,13 +15,6 @@ func NewUserRepository(db *gorm.DB) *Repository {
 	return &Repository{DB: db}
 }
 
-func (r *Repository) Exists(username string) bool {
-	var user models.User
-	err := r.DB.Where("username = ?", username).First(&user).Error
-
-	return err == nil
-}
-
 func (r *Repository) Search(username string) (models.User, error) {
 	var user models.User
 	result := r.DB.Where("username=?", username).First(&user)
