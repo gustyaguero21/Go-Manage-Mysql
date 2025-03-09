@@ -14,12 +14,12 @@ type Repository struct {
 func NewUserRepository(db *gorm.DB) *Repository {
 	return &Repository{DB: db}
 }
-
-func (r *Repository) Exists(username string) bool {
-	var user models.User
-	err := r.DB.Where("username = ?", username).First(&user).Error
-
-	return err == nil
+func (r *Repository) Save(user models.User) error {
+	result := r.DB.Create(user)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
 }
 
 func (r *Repository) Search(username string) (models.User, error) {
@@ -29,14 +29,6 @@ func (r *Repository) Search(username string) (models.User, error) {
 		return models.User{}, result.Error
 	}
 	return user, nil
-}
-
-func (r *Repository) Save(user models.User) error {
-	result := r.DB.Create(user)
-	if result.Error != nil {
-		return result.Error
-	}
-	return nil
 }
 
 func (r *Repository) Update(username string, update models.User) error {

@@ -10,7 +10,6 @@ const (
 // db test queries
 
 const (
-	ExistsTestQuery    = "SELECT \\* FROM `users`"
 	SearchTestQuery    = "SELECT \\* FROM `users`"
 	SaveTestQuery      = "INSERT INTO `users`"
 	UpdateTestQuery    = "UPDATE `users` SET"

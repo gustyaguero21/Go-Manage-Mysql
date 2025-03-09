@@ -11,4 +11,5 @@ type UserServices interface {
 	UpdateUser(ctx context.Context, username string, update models.User) (err error)
 	DeleteUser(ctx context.Context, username string) (err error)
 	ChangeUserPwd(ctx context.Context, username string, newPwd string) (err error)
+	LoginUser(ctx context.Context, username, password string) error
 }
