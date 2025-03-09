@@ -10,7 +10,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gustyaguero21/go-core/pkg/web"
-	"gorm.io/gorm"
 )
 
 type Handler struct {
@@ -27,7 +26,7 @@ func (h *Handler) CreateUserHandler(ctx *gin.Context) {
 	var user models.User
 
 	if err := ctx.ShouldBindJSON(&user); err != nil {
-		web.NewError(ctx, http.StatusBadRequest, err.Error())
+		web.NewError(ctx, http.StatusBadRequest, config.ErrInvalidBody)
 		return
 	}
 
@@ -75,7 +74,7 @@ func (h *Handler) UpdateUserHandler(ctx *gin.Context) {
 	}
 
 	if err := ctx.ShouldBindJSON(&update); err != nil {
-		web.NewError(ctx, http.StatusBadRequest, err.Error())
+		web.NewError(ctx, http.StatusBadRequest, config.ErrInvalidBody)
 		return
 	}
 
@@ -112,14 +111,14 @@ func (h *Handler) DeleteUserHandler(ctx *gin.Context) {
 func (h *Handler) ChangePwdHandler(ctx *gin.Context) {
 	ctx.Header("Content-Type", "application/json")
 
-	username := ctx.Query("username")
-	newPassword := ctx.Query("new_password")
-	if username == "" || newPassword == "" {
-		web.NewError(ctx, http.StatusBadRequest, config.ErrInvalidQueryParam)
+	var user models.User
+
+	if err := ctx.ShouldBindJSON(&user); err != nil {
+		web.NewError(ctx, http.StatusBadRequest, config.ErrInvalidBody)
 		return
 	}
 
-	if changeErr := h.Service.ChangeUserPwd(ctx, username, newPassword); changeErr != nil {
+	if changeErr := h.Service.ChangeUserPwd(ctx, user.Username, user.Password); changeErr != nil {
 		web.NewError(ctx, http.StatusInternalServerError, changeErr.Error())
 		return
 	}
@@ -144,8 +143,8 @@ func (h *Handler) LoginUserHandler(ctx *gin.Context) {
 
 	err := h.Service.LoginUser(ctx, user.Username, user.Password)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			web.NewError(ctx, http.StatusNotFound, config.ErrUserNotFound)
+		if errors.Is(err, config.ErrRecordNotFound) {
+			web.NewError(ctx, http.StatusNotFound, config.ErrUserNotFound.Error())
 			return
 		} else {
 			web.NewError(ctx, http.StatusUnauthorized, config.ErrUnauthorizedUser)

@@ -1,20 +1,28 @@
 package config
 
-//service errors
+import "errors"
 
 const (
-	ErrUserAlreadyExists    = "user already exists"
-	ErrUserNotFound         = "user not found"
-	ErrRecordNotFound       = "record not found"
-	ErrCreatingUser         = "error creating user"
-	ErrSearchingUser        = "error searching user"
-	ErrUpdatingUser         = "error updating user data"
-	ErrDeletingUser         = "error deleting user data"
-	ErrChangingPwd          = "error changing user password"
-	ErrPwdMatching          = "passwords doesnt match"
-	ErrDbError              = "db error"
+	//service errors
+	ErrCreatingUser  = "error creating user"
+	ErrSearchingUser = "error searching user"
+	ErrUpdatingUser  = "error updating user data"
+	ErrDeletingUser  = "error deleting user data"
+	ErrChangingPwd   = "error changing user password"
+	ErrLoginUser     = "error login user"
+
+	//errors
 	ErrInvalidQueryParam    = "invalid query param"
-	ErrInvalidBody          = "invalid request body"
+	ErrInvalidBody          = "invalid body request"
 	ErrAllFieldsAreRequired = "all fields are required"
 	ErrUnauthorizedUser     = "invalid credentials. Please check username & password"
+)
+
+var (
+	ErrUserAlreadyExists = errors.New("user already exists")
+	ErrDbError           = errors.New("db error")
+	ErrUserNotFound      = errors.New("user not found")
+	ErrNoNewData         = errors.New("no new data to update")
+	ErrPwdMatching       = errors.New("passwords doesnt match")
+	ErrRecordNotFound    = errors.New("record not found")
 )

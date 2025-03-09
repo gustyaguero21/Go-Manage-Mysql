@@ -7,10 +7,13 @@ import (
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func InitDatabase() (*gorm.DB, error) {
-	db, err := gorm.Open(mysql.Open(config.GetDsn()), &gorm.Config{})
+	db, err := gorm.Open(mysql.Open(config.GetDsn()), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error opening database. Error: %w", err)
 	}
@@ -21,7 +24,9 @@ func InitDatabase() (*gorm.DB, error) {
 			return nil, createErr
 		}
 
-		db, err = gorm.Open(mysql.Open(config.GetDBDsn()), &gorm.Config{})
+		db, err = gorm.Open(mysql.Open(config.GetDBDsn()), &gorm.Config{
+			Logger: logger.Default.LogMode(logger.Silent),
+		})
 		if err != nil {
 			return nil, fmt.Errorf("error reconnecting to database. Error: %w", err)
 		}
@@ -32,7 +37,9 @@ func InitDatabase() (*gorm.DB, error) {
 
 	} else {
 		fmt.Println("DATABASE FOUND. CONNECTING....")
-		db, err = gorm.Open(mysql.Open(config.GetDBDsn()), &gorm.Config{})
+		db, err = gorm.Open(mysql.Open(config.GetDBDsn()), &gorm.Config{
+			Logger: logger.Default.LogMode(logger.Silent),
+		})
 		if err != nil {
 			return nil, fmt.Errorf("error opening database. Error: %w", err)
 		}
