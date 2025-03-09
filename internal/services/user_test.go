@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"go-manage-mysql/cmd/config"
 	"go-manage-mysql/internal/models"
 	"go-manage-mysql/internal/repository"
@@ -45,11 +44,11 @@ func TestCreateUser(t *testing.T) {
 		{
 			Name:        "Exists Error",
 			User:        testutils.OpenMock("../mocks/user.json"),
-			ExpectedErr: fmt.Errorf("db error"),
+			ExpectedErr: config.ErrDbError,
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
-					WillReturnError(fmt.Errorf("db error"))
+					WillReturnError(config.ErrDbError)
 			},
 			MockAct: func() {
 			},
@@ -79,7 +78,7 @@ func TestCreateUser(t *testing.T) {
 				mock.ExpectBegin()
 				mock.ExpectExec(config.SaveTestQuery).
 					WithArgs(sqlmock.AnyArg(), "John", "Doe", "johndoe", "123456789", "johndoe@example.com", sqlmock.AnyArg()).
-					WillReturnError(fmt.Errorf("db error"))
+					WillReturnError(config.ErrDbError)
 				mock.ExpectRollback()
 			},
 		},
@@ -248,7 +247,7 @@ func TestUpdate(t *testing.T) {
 			Name:        "Error updating user",
 			Username:    "johndoe",
 			Update:      testutils.OpenMock("../mocks/update_user.json"),
-			ExpectedErr: fmt.Errorf("error updating user data. Error: db error"),
+			ExpectedErr: apperror.AppError(config.ErrUpdatingUser, config.ErrNoNewData),
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
@@ -258,7 +257,7 @@ func TestUpdate(t *testing.T) {
 				mock.ExpectBegin()
 				mock.ExpectExec(config.UpdateTestQuery).
 					WithArgs("Johncito", "Doecito", "23456789", "johncitodoecito@example.com", "johndoe").
-					WillReturnError(fmt.Errorf("db error"))
+					WillReturnError(apperror.AppError(config.ErrUpdatingUser, config.ErrNoNewData))
 				mock.ExpectRollback()
 			},
 		},
