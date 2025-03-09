@@ -118,6 +118,11 @@ func (h *Handler) ChangePwdHandler(ctx *gin.Context) {
 		return
 	}
 
+	if validate := validator.ValidateData(user, config.ChangePwd_ValidateFields); validate != nil {
+		web.NewError(ctx, http.StatusBadRequest, validate.Error())
+		return
+	}
+
 	if changeErr := h.Service.ChangeUserPwd(ctx, user.Username, user.Password); changeErr != nil {
 		web.NewError(ctx, http.StatusInternalServerError, changeErr.Error())
 		return

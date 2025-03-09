@@ -481,6 +481,18 @@ func TestChangePwdHandler(t *testing.T) {
 			MockAct: func() {
 			},
 		},
+		{
+			Name: "Invalid password format",
+			Body: `{
+				"username": "johndoe",
+				"password": "Pass"
+			}`,
+			ExpectedCode: http.StatusBadRequest,
+			ExistsMock: func() {
+			},
+			MockAct: func() {
+			},
+		},
 	}
 
 	for _, tt := range test {
