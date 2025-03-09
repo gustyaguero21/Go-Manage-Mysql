@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"bytes"
-	"fmt"
 	"go-manage-mysql/cmd/config"
 	"go-manage-mysql/internal/repository"
 	"go-manage-mysql/internal/services"
@@ -427,26 +426,18 @@ func TestChangePwdHandler(t *testing.T) {
 
 	test := []struct {
 		Name         string
-		Username     string
-		Password     string
+		Body         string
 		ExpectedCode int
 		ExistsMock   func()
 		MockAct      func()
 	}{
+
 		{
-			Name:         "Invalid Query Param",
-			Username:     "",
-			Password:     "NewPassword1234",
-			ExpectedCode: http.StatusBadRequest,
-			ExistsMock: func() {
-			},
-			MockAct: func() {
-			},
-		},
-		{
-			Name:         "Success",
-			Username:     "johndoe",
-			Password:     "NewPassword1234",
+			Name: "Success",
+			Body: `{
+				"username": "johndoe",
+				"password": "Password1234"
+			}`,
 			ExpectedCode: http.StatusOK,
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
@@ -463,15 +454,41 @@ func TestChangePwdHandler(t *testing.T) {
 			},
 		},
 		{
-			Name:         "Error",
-			Username:     "johndoe",
-			Password:     "NewPassword1234",
+			Name: "Error",
+			Body: `{
+				"username": "johndoe",
+				"password": "Password1234"
+			}`,
 			ExpectedCode: http.StatusInternalServerError,
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
 					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "surname", "username", "email", "password"}).
 						AddRow(1, "John", "Doe", "johndoe", "johndoe@example.com", "Password1234"))
+			},
+			MockAct: func() {
+			},
+		},
+		{
+			Name: "Invalid body request",
+			Body: `{
+				"username": "johndoe",
+				"password": "Password1234
+			}`,
+			ExpectedCode: http.StatusBadRequest,
+			ExistsMock: func() {
+			},
+			MockAct: func() {
+			},
+		},
+		{
+			Name: "Invalid password format",
+			Body: `{
+				"username": "johndoe",
+				"password": "Pass"
+			}`,
+			ExpectedCode: http.StatusBadRequest,
+			ExistsMock: func() {
 			},
 			MockAct: func() {
 			},
@@ -483,9 +500,7 @@ func TestChangePwdHandler(t *testing.T) {
 			tt.ExistsMock()
 			tt.MockAct()
 
-			url := fmt.Sprintf("/change-password?username=%s&new_password=%s", tt.Username, tt.Password)
-
-			req, _ := http.NewRequest(http.MethodPatch, url, nil)
+			req, _ := http.NewRequest(http.MethodPatch, "/change-password", bytes.NewBufferString(tt.Body))
 
 			w := httptest.NewRecorder()
 
@@ -551,18 +566,18 @@ func TestLoginUserHandler(t *testing.T) {
 		{
 			Name: "User Not Found",
 			Body: `{
-				"username": "johndoe",
+				"username": "nonexistent",
 				"password":"Password1234"
 			}`,
 			ExpectedCode: http.StatusNotFound,
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
-					WithArgs("johndoe", 1).
-					WillReturnRows(sqlmock.NewRows([]string{"id"}))
+					WithArgs("nonexistent", 1).
+					WillReturnError(config.ErrRecordNotFound)
 			},
-			MockAct: func() {
-			},
+			MockAct: func() {},
 		},
+
 		{
 			Name: "Unauthorized",
 			Body: `{

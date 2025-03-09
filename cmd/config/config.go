@@ -9,6 +9,7 @@ const (
 //fields validating
 
 var (
-	Create_ValidateFields = []string{"name", "surname", "username", "phone", "email", "password"}
-	Update_ValidateFields = []string{"name", "surname", "phone", "email"}
+	Create_ValidateFields    = []string{"name", "surname", "username", "phone", "email", "password"}
+	Update_ValidateFields    = []string{"name", "surname", "phone", "email"}
+	ChangePwd_ValidateFields = []string{"username", "password"}
 )

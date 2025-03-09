@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"go-manage-mysql/cmd/config"
 	"go-manage-mysql/internal/models"
 	"go-manage-mysql/internal/repository"
@@ -45,11 +44,11 @@ func TestCreateUser(t *testing.T) {
 		{
 			Name:        "Exists Error",
 			User:        testutils.OpenMock("../mocks/user.json"),
-			ExpectedErr: fmt.Errorf("db error"),
+			ExpectedErr: config.ErrDbError,
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
-					WillReturnError(fmt.Errorf("db error"))
+					WillReturnError(config.ErrDbError)
 			},
 			MockAct: func() {
 			},
@@ -57,7 +56,7 @@ func TestCreateUser(t *testing.T) {
 		{
 			Name:        "User already exists",
 			User:        testutils.OpenMock("../mocks/user.json"),
-			ExpectedErr: apperror.AppError(config.ErrUserAlreadyExists, nil),
+			ExpectedErr: apperror.AppError(config.ErrCreatingUser, config.ErrUserAlreadyExists),
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
@@ -67,9 +66,9 @@ func TestCreateUser(t *testing.T) {
 			},
 		},
 		{
-			Name:        "Error",
+			Name:        "Error creating user",
 			User:        testutils.OpenMock("../mocks/user.json"),
-			ExpectedErr: apperror.AppError(config.ErrCreatingUser, fmt.Errorf(config.ErrDbError)),
+			ExpectedErr: apperror.AppError(config.ErrCreatingUser, config.ErrDbError),
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
@@ -79,7 +78,7 @@ func TestCreateUser(t *testing.T) {
 				mock.ExpectBegin()
 				mock.ExpectExec(config.SaveTestQuery).
 					WithArgs(sqlmock.AnyArg(), "John", "Doe", "johndoe", "123456789", "johndoe@example.com", sqlmock.AnyArg()).
-					WillReturnError(fmt.Errorf("db error"))
+					WillReturnError(config.ErrDbError)
 				mock.ExpectRollback()
 			},
 		},
@@ -148,10 +147,10 @@ func TestSearchUser(t *testing.T) {
 		MockAct      func()
 	}{
 		{
-			Name:         "Error",
+			Name:         "Error searching user",
 			Username:     "johndoe",
 			ExpectedUser: testutils.OpenMock("../mocks/user.json"),
-			ExpectedErr:  apperror.AppError(config.ErrSearchingUser, fmt.Errorf(config.ErrRecordNotFound)),
+			ExpectedErr:  apperror.AppError(config.ErrSearchingUser, config.ErrUserNotFound),
 			MockAct: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
@@ -222,11 +221,11 @@ func TestUpdate(t *testing.T) {
 			Name:        "Exists Error",
 			Username:    "johndoe",
 			Update:      testutils.OpenMock("../mocks/update_user.json"),
-			ExpectedErr: apperror.AppError(config.ErrDbError, nil),
+			ExpectedErr: apperror.AppError(config.ErrUpdatingUser, config.ErrDbError),
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
-					WillReturnError(apperror.AppError(config.ErrDbError, nil))
+					WillReturnError(apperror.AppError(config.ErrUpdatingUser, config.ErrDbError))
 			},
 			MockAct: func() {
 			},
@@ -235,7 +234,7 @@ func TestUpdate(t *testing.T) {
 			Name:        "User not found",
 			Username:    "johndoe",
 			Update:      testutils.OpenMock("../mocks/update_user.json"),
-			ExpectedErr: apperror.AppError(config.ErrUserNotFound, nil),
+			ExpectedErr: apperror.AppError(config.ErrUpdatingUser, config.ErrUserNotFound),
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
@@ -248,7 +247,7 @@ func TestUpdate(t *testing.T) {
 			Name:        "Error updating user",
 			Username:    "johndoe",
 			Update:      testutils.OpenMock("../mocks/update_user.json"),
-			ExpectedErr: fmt.Errorf("error updating user data. Error: db error"),
+			ExpectedErr: apperror.AppError(config.ErrUpdatingUser, config.ErrNoNewData),
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
@@ -258,7 +257,7 @@ func TestUpdate(t *testing.T) {
 				mock.ExpectBegin()
 				mock.ExpectExec(config.UpdateTestQuery).
 					WithArgs("Johncito", "Doecito", "23456789", "johncitodoecito@example.com", "johndoe").
-					WillReturnError(fmt.Errorf("db error"))
+					WillReturnError(apperror.AppError(config.ErrUpdatingUser, config.ErrNoNewData))
 				mock.ExpectRollback()
 			},
 		},
@@ -326,11 +325,11 @@ func TestDelete(t *testing.T) {
 		{
 			Name:        "Exists Error",
 			Username:    "johndoe",
-			ExpectedErr: apperror.AppError(config.ErrUserNotFound, nil),
+			ExpectedErr: apperror.AppError(config.ErrDeletingUser, config.ErrDbError),
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
-					WillReturnError(apperror.AppError(config.ErrUserNotFound, nil))
+					WillReturnError(apperror.AppError(config.ErrDeletingUser, config.ErrDbError))
 			},
 			MockAct: func() {
 			},
@@ -338,7 +337,7 @@ func TestDelete(t *testing.T) {
 		{
 			Name:        "User not found",
 			Username:    "johndoe",
-			ExpectedErr: apperror.AppError(config.ErrUserNotFound, nil),
+			ExpectedErr: apperror.AppError(config.ErrDeletingUser, config.ErrUserNotFound),
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
@@ -348,9 +347,9 @@ func TestDelete(t *testing.T) {
 			},
 		},
 		{
-			Name:        "Error",
+			Name:        "Error deleting user",
 			Username:    "johndoe",
-			ExpectedErr: fmt.Errorf("error deleting user data. Error: db error"),
+			ExpectedErr: apperror.AppError(config.ErrDeletingUser, config.ErrDbError),
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
@@ -360,7 +359,7 @@ func TestDelete(t *testing.T) {
 				mock.ExpectBegin()
 				mock.ExpectExec(config.DeleteTestQuery).
 					WithArgs("johndoe").
-					WillReturnError(fmt.Errorf("db error"))
+					WillReturnError(config.ErrDbError)
 				mock.ExpectRollback()
 			},
 		},
@@ -428,11 +427,11 @@ func TestChangePwd(t *testing.T) {
 		{
 			Name:        "Exists Error",
 			Username:    "johndoe",
-			ExpectedErr: apperror.AppError(config.ErrDbError, nil),
+			ExpectedErr: apperror.AppError(config.ErrChangingPwd, config.ErrDbError),
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
-					WillReturnError(apperror.AppError(config.ErrDbError, nil))
+					WillReturnError(apperror.AppError(config.ErrChangingPwd, config.ErrDbError))
 			},
 			MockAct: func() {
 			},
@@ -441,7 +440,7 @@ func TestChangePwd(t *testing.T) {
 			Name:        "User not found",
 			Username:    "johndoe",
 			NewPwd:      "NewPassword1234",
-			ExpectedErr: apperror.AppError(config.ErrUserNotFound, nil),
+			ExpectedErr: apperror.AppError(config.ErrChangingPwd, config.ErrUserNotFound),
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
@@ -451,10 +450,10 @@ func TestChangePwd(t *testing.T) {
 			},
 		},
 		{
-			Name:        "Error",
+			Name:        "Error changing user password",
 			Username:    "johndoe",
 			NewPwd:      "NewPassword1234",
-			ExpectedErr: apperror.AppError(config.ErrChangingPwd, fmt.Errorf(config.ErrDbError)),
+			ExpectedErr: apperror.AppError(config.ErrChangingPwd, config.ErrDbError),
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
@@ -464,7 +463,7 @@ func TestChangePwd(t *testing.T) {
 				mock.ExpectBegin()
 				mock.ExpectExec(config.ChangePwdTestQuery).
 					WithArgs(sqlmock.AnyArg(), "johndoe").
-					WillReturnError(fmt.Errorf(config.ErrDbError))
+					WillReturnError(config.ErrDbError)
 				mock.ExpectRollback()
 			},
 		},
@@ -533,11 +532,11 @@ func TestLogin(t *testing.T) {
 			Name:        "Exists Error",
 			Username:    "johndoe",
 			Password:    "Password1234",
-			ExpectedErr: apperror.AppError(config.ErrDbError, nil),
+			ExpectedErr: apperror.AppError(config.ErrLoginUser, config.ErrDbError),
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
-					WillReturnError(apperror.AppError(config.ErrDbError, nil))
+					WillReturnError(apperror.AppError(config.ErrLoginUser, config.ErrDbError))
 			},
 			MockAct: func() {
 			},
@@ -546,7 +545,7 @@ func TestLogin(t *testing.T) {
 			Name:        "User not found",
 			Username:    "johndoe",
 			Password:    "Password1234",
-			ExpectedErr: apperror.AppError(config.ErrUserNotFound, gorm.ErrRecordNotFound),
+			ExpectedErr: apperror.AppError(config.ErrLoginUser, config.ErrUserNotFound),
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
@@ -559,7 +558,7 @@ func TestLogin(t *testing.T) {
 			Name:        "Passwords doesn't match",
 			Username:    "johndoe",
 			Password:    "Password12",
-			ExpectedErr: apperror.AppError(config.ErrPwdMatching, nil),
+			ExpectedErr: apperror.AppError(config.ErrLoginUser, config.ErrPwdMatching),
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
@@ -575,10 +574,10 @@ func TestLogin(t *testing.T) {
 			},
 		},
 		{
-			Name:        "Error",
+			Name:        "Error login user",
 			Username:    "johndoe",
 			Password:    "Password1234",
-			ExpectedErr: apperror.AppError(config.ErrSearchingUser, fmt.Errorf(config.ErrDbError)),
+			ExpectedErr: apperror.AppError(config.ErrSearchingUser, config.ErrDbError),
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
@@ -587,7 +586,7 @@ func TestLogin(t *testing.T) {
 			MockAct: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
-					WillReturnError(fmt.Errorf(config.ErrDbError))
+					WillReturnError(config.ErrDbError)
 			},
 		},
 
