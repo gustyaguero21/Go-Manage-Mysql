@@ -36,6 +36,10 @@ func GetDBName() string {
 	return os.Getenv("DB_NAME")
 }
 
+func GetToken() string {
+	return os.Getenv("TOKEN")
+}
+
 func GetDsn() string {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/",
 		os.Getenv("DB_USER"),
