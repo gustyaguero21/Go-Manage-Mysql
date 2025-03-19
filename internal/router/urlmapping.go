@@ -3,9 +3,9 @@ package router
 import (
 	"go-manage-mysql/cmd/config"
 	"go-manage-mysql/internal/handlers"
+	"go-manage-mysql/internal/middleware"
 	"go-manage-mysql/internal/repository"
 	"go-manage-mysql/internal/services"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -18,16 +18,16 @@ func UrlMapping(r *gin.Engine, conn *gorm.DB) {
 	service := services.NewUserServices(repo)
 	handler := handlers.NewUserHandler(service)
 
-	api.GET("/ping", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, gin.H{
-			"message": "pong",
-		})
-	})
-
-	api.POST("/create", handler.CreateUserHandler)
-	api.GET("/search", handler.SearchUserHandler)
-	api.PATCH("/update", handler.UpdateUserHandler)
-	api.DELETE("/delete", handler.DeleteUserHandler)
-	api.PATCH("/change-password", handler.ChangePwdHandler)
+	// Rutas públicas (sin middleware)
 	api.POST("/login", handler.LoginUserHandler)
+
+	// Grupo de rutas protegidas con middleware JWT
+	protected := api.Group("/")
+	protected.Use(middleware.JWTMiddleware())
+
+	protected.POST("/create", handler.CreateUserHandler)
+	protected.GET("/search", handler.SearchUserHandler)
+	protected.PATCH("/update", handler.UpdateUserHandler)
+	protected.DELETE("/delete", handler.DeleteUserHandler)
+	protected.PATCH("/change-password", handler.ChangePwdHandler)
 }
