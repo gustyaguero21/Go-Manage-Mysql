@@ -7,8 +7,10 @@ import (
 	"go-manage-mysql/internal/services"
 	"go-manage-mysql/internal/utils/validator"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 	"github.com/gustyaguero21/go-core/pkg/web"
 )
 
@@ -157,7 +159,23 @@ func (h *Handler) LoginUserHandler(ctx *gin.Context) {
 		}
 	}
 
-	ctx.JSON(http.StatusOK, usersResponse("WELCOME "+user.Username, http.StatusOK, nil))
+	tokenString, err := generateJWT(user.Username)
+	if err != nil {
+		web.NewError(ctx, http.StatusInternalServerError, "error generating token")
+		return
+	}
+
+	ctx.JSON(http.StatusOK, usersResponse("WELCOME "+user.Username, http.StatusOK, tokenString))
+}
+
+func generateJWT(username string) (string, error) {
+	claims := jwt.MapClaims{
+		"username": username,
+		"exp":      time.Now().Add(time.Hour * 10).Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(config.GetToken()))
 }
 
 func usersResponse(msg string, status int, data interface{}) models.UserResponse {
