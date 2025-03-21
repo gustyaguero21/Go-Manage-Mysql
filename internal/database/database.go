@@ -51,9 +51,7 @@ func InitDatabase() (*gorm.DB, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error opening database. Error: %w", err)
 		}
-		if err := defaultAdminUser(db); err != nil {
-			return nil, err
-		}
+
 	}
 
 	return db, nil
