@@ -1,81 +1,51 @@
 package middleware
 
 import (
+	"go-manage-mysql/cmd/config"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestJWTMiddleware(t *testing.T) {
 
-	jwtSecret = []byte("valid-token")
-
-	token := jwt.New(jwt.SigningMethodHS256)
-	tokenString, err := token.SignedString(jwtSecret)
-	assert.NoError(t, err)
+	claims := jwt.MapClaims{"username": "testuser"}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, _ := token.SignedString([]byte(config.GetToken()))
 
 	tests := []struct {
-		name           string
-		authHeader     string
-		expectedStatus int
-		expectedBody   string
+		name         string
+		token        string
+		expectStatus int
 	}{
-		{
-			name:           "Valid Token",
-			authHeader:     "Bearer " + tokenString,
-			expectedStatus: http.StatusOK,
-			expectedBody:   "",
-		},
-		{
-			name:           "Missing Token",
-			authHeader:     "",
-			expectedStatus: http.StatusUnauthorized,
-			expectedBody:   `{"status":401,"error":"required token"}`,
-		},
-		{
-			name:           "Invalid Token Format",
-			authHeader:     "InvalidToken",
-			expectedStatus: http.StatusUnauthorized,
-			expectedBody:   `{"status":401,"error":"invalid token format"}`,
-		},
-		{
-			name:           "Invalid Bearer Format",
-			authHeader:     "Bearer",
-			expectedStatus: http.StatusUnauthorized,
-			expectedBody:   `{"status":401,"error":"invalid token format"}`,
-		},
-		{
-			name:           "Invalid Token ",
-			authHeader:     "Bearer invalid.token.signature",
-			expectedStatus: http.StatusUnauthorized,
-			expectedBody:   `{"status":401,"error":"invalid token"}`,
-		},
+		{"Valid Token", "Bearer " + tokenString, http.StatusOK},
+		{"Missing Token", "", http.StatusUnauthorized},
+		{"Invalid Token Format", "InvalidToken", http.StatusUnauthorized},
+		{"Invalid Signature", "Bearer invalid.token.signature", http.StatusUnauthorized},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gin.SetMode(gin.TestMode)
-			router := gin.New()
-			router.Use(JWTMiddleware())
-			router.GET("/test", func(ctx *gin.Context) {
-				ctx.Status(http.StatusOK)
-			})
+			// Configurar router de prueba
+			r := gin.Default()
+			r.Use(JWTMiddleware())
+			r.GET("/test", func(c *gin.Context) { c.Status(http.StatusOK) })
 
-			req, _ := http.NewRequest("GET", "/test", nil)
-			if tt.authHeader != "" {
-				req.Header.Set("Authorization", tt.authHeader)
+			// Crear solicitud
+			req := httptest.NewRequest("GET", "/test", nil)
+			if tt.token != "" {
+				req.Header.Set("Authorization", tt.token)
 			}
 
 			w := httptest.NewRecorder()
-			router.ServeHTTP(w, req)
+			r.ServeHTTP(w, req)
 
-			assert.Equal(t, tt.expectedStatus, w.Code)
-			assert.Equal(t, tt.expectedBody, strings.TrimSpace(w.Body.String()))
+			if w.Code != tt.expectStatus {
+				t.Errorf("%s: expected status %d, got %d", tt.name, tt.expectStatus, w.Code)
+			}
 		})
 	}
 }

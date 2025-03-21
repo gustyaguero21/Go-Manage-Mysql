@@ -169,9 +169,10 @@ func (h *Handler) LoginUserHandler(ctx *gin.Context) {
 }
 
 func generateJWT(username string) (string, error) {
+	token_time := config.GetTokenValidTime()
 	claims := jwt.MapClaims{
 		"username": username,
-		"exp":      time.Now().Add(time.Hour * 10).Unix(),
+		"exp":      time.Now().Add(time.Hour * time.Duration(token_time)).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
