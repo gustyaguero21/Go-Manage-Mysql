@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
@@ -38,6 +39,11 @@ func GetDBName() string {
 
 func GetToken() string {
 	return os.Getenv("TOKEN")
+}
+
+func GetTokenValidTime() int {
+	time, _ := strconv.Atoi(os.Getenv("TOKEN_VALID_TIME"))
+	return time
 }
 
 func GetDsn() string {

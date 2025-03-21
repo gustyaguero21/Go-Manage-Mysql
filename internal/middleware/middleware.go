@@ -10,10 +10,9 @@ import (
 	"github.com/gustyaguero21/go-core/pkg/web"
 )
 
-var jwtSecret = []byte(config.GetToken())
-
 func JWTMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		jwtSecret := []byte(config.GetToken())
 		authHeader := ctx.GetHeader("Authorization")
 		if authHeader == "" {
 			web.NewError(ctx, http.StatusUnauthorized, "required token")

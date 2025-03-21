@@ -18,10 +18,8 @@ func UrlMapping(r *gin.Engine, conn *gorm.DB) {
 	service := services.NewUserServices(repo)
 	handler := handlers.NewUserHandler(service)
 
-	// Rutas públicas (sin middleware)
 	api.POST("/login", handler.LoginUserHandler)
 
-	// Grupo de rutas protegidas con middleware JWT
 	protected := api.Group("/")
 	protected.Use(middleware.JWTMiddleware())
 
