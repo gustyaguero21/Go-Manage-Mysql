@@ -5,6 +5,8 @@ import (
 	"go-manage-mysql/cmd/config"
 	"go-manage-mysql/internal/models"
 
+	"github.com/google/uuid"
+	"github.com/gustyaguero21/go-core/pkg/encrypter"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -34,15 +36,22 @@ func InitDatabase() (*gorm.DB, error) {
 		if err := db.AutoMigrate(models.User{}); err != nil {
 			return nil, fmt.Errorf("error migrating user. Error: %w", err)
 		}
+		if err := defaultAdminUser(db); err != nil {
+			return nil, err
+		}
 
 	} else {
 		fmt.Println("DATABASE FOUND. CONNECTING....")
 		db, err = gorm.Open(mysql.Open(config.GetDBDsn()), &gorm.Config{
 			Logger: logger.Default.LogMode(logger.Silent),
 		})
+		if err := db.AutoMigrate(models.User{}); err != nil {
+			return nil, fmt.Errorf("error migrating user. Error: %w", err)
+		}
 		if err != nil {
 			return nil, fmt.Errorf("error opening database. Error: %w", err)
 		}
+
 	}
 
 	return db, nil
@@ -69,5 +78,23 @@ func createDatabase(db *gorm.DB, dbName string) error {
 	}
 
 	fmt.Println("DATABASE CREATED SUCCESSFULLY")
+	return nil
+}
+
+func defaultAdminUser(db *gorm.DB) error {
+
+	hash, hashErr := encrypter.PasswordEncrypter("DefaultPassword")
+	if hashErr != nil {
+		return hashErr
+	}
+
+	result := db.Create(models.User{
+		ID:       uuid.NewString(),
+		Username: "admin",
+		Password: string(hash),
+	})
+	if result.Error != nil {
+		return result.Error
+	}
 	return nil
 }
