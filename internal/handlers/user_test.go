@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"go-manage-mysql/cmd/config"
+	"go-manage-mysql/internal/mocks"
 	"go-manage-mysql/internal/repository"
 	"go-manage-mysql/internal/services"
 	"log"
@@ -47,16 +48,8 @@ func TestCreateUserHandler(t *testing.T) {
 		MockAct      func()
 	}{
 		{
-			Name: "Success",
-			Body: `{
-				"id":"1",
-				"name": "John",
-				"surname": "Doe",
-				"username": "johndoe",
-				"phone":"23456789",
-				"email": "johndoe@example.com",
-				"password": "Password1234"
-			}`,
+			Name:         "Success",
+			Body:         mocks.CreateUser,
 			ExpectedCode: http.StatusCreated,
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
@@ -73,29 +66,21 @@ func TestCreateUserHandler(t *testing.T) {
 		},
 		{
 			Name:         "Invalid JSON",
-			Body:         `{"id": "1", "name": "John", "surname": "Doe", "username": "johndoe","phone":"123456789", "email": "johndoe@example.com", "password": }`,
+			Body:         mocks.InvalidJSON,
 			ExpectedCode: http.StatusBadRequest,
 			ExistsMock:   func() {},
 			MockAct:      func() {},
 		},
 		{
 			Name:         "Validate Error",
-			Body:         `{"id": "1", "name": "John", "surname": "Doe", "username": "johndoe","phone":"123456789"}`,
+			Body:         mocks.ValidateError,
 			ExpectedCode: http.StatusBadRequest,
 			ExistsMock:   func() {},
 			MockAct:      func() {},
 		},
 		{
-			Name: "Error",
-			Body: `{
-				"id": "1",
-				"name": "John",
-				"surname": "Doe",
-				"username": "johndoe",
-				"phone":"23456789",
-				"email": "johndoe@example.com",
-				"password": "Password1234"
-			}`,
+			Name:         "Error",
+			Body:         mocks.CreateUser,
 			ExpectedCode: http.StatusInternalServerError,
 			ExistsMock:   func() {},
 			MockAct:      func() {},
@@ -220,46 +205,9 @@ func TestUpdate(t *testing.T) {
 		MockAct      func()
 	}{
 		{
-			Name:     "Invalid Query Param",
-			Username: "",
-			Body: `{
-				"surname": "Doecito",
-				"phone":"23456789",
-				"email": "johncitodoecito@example.com"
-			}`,
-			ExpectedCode: http.StatusBadRequest,
-			ExistsMock:   func() {},
-			MockAct:      func() {},
-		},
-		{
-			Name:         "Invalid JSON Body",
+			Name:         "Success",
 			Username:     "johndoe",
-			Body:         `{"name": "Johncito", "surname": "Doecito", "phone": "23456789", "email": "johncitodoecito@example.com"`,
-			ExpectedCode: http.StatusBadRequest,
-			ExistsMock:   func() {},
-			MockAct:      func() {},
-		},
-		{
-			Name:     "Validation Error",
-			Username: "johndoe",
-			Body: `{
-				"surname": "Doecito",
-				"phone":"23456789",
-				"email": "johncitodoecito@"
-			}`,
-			ExpectedCode: http.StatusBadRequest,
-			ExistsMock:   func() {},
-			MockAct:      func() {},
-		},
-		{
-			Name:     "Success",
-			Username: "johndoe",
-			Body: `{
-				"name": "Johncito",
-				"surname": "Doecito",
-				"phone":"23456789",
-				"email": "johncitodoecito@example.com"
-			}`,
+			Body:         mocks.UpdateUser,
 			ExpectedCode: http.StatusOK,
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
@@ -276,15 +224,33 @@ func TestUpdate(t *testing.T) {
 			},
 		},
 		{
-			Name:     "Error",
-			Username: "johndoe",
-			Body: `{
-				"id":"1",
-				"name": "Johncito",
-				"surname": "Doecito",
-				"phone":"23456789",
-				"email": "johncitodoecito@example.com"
-			}`,
+			Name:         "Invalid Query Param",
+			Username:     "",
+			Body:         mocks.InvalidQueryParam,
+			ExpectedCode: http.StatusBadRequest,
+			ExistsMock:   func() {},
+			MockAct:      func() {},
+		},
+		{
+			Name:         "Invalid JSON",
+			Username:     "johndoe",
+			Body:         mocks.InvalidJSON,
+			ExpectedCode: http.StatusBadRequest,
+			ExistsMock:   func() {},
+			MockAct:      func() {},
+		},
+		{
+			Name:         "Validate Error",
+			Username:     "johndoe",
+			Body:         mocks.ValidateError,
+			ExpectedCode: http.StatusBadRequest,
+			ExistsMock:   func() {},
+			MockAct:      func() {},
+		},
+		{
+			Name:         "Error",
+			Username:     "johndoe",
+			Body:         mocks.UpdateUser,
 			ExpectedCode: http.StatusInternalServerError,
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
@@ -342,16 +308,6 @@ func TestDelete(t *testing.T) {
 		ExistsMock   func()
 		MockAct      func()
 	}{
-
-		{
-			Name:         "Invalid Query Param",
-			Username:     "",
-			ExpectedCode: http.StatusBadRequest,
-			ExistsMock: func() {
-			},
-			MockAct: func() {
-			},
-		},
 		{
 			Name:         "Success",
 			Username:     "johndoe",
@@ -368,6 +324,15 @@ func TestDelete(t *testing.T) {
 					WithArgs("johndoe").
 					WillReturnResult(sqlmock.NewResult(1, 1))
 				mock.ExpectCommit()
+			},
+		},
+		{
+			Name:         "Invalid Query Param",
+			Username:     "",
+			ExpectedCode: http.StatusBadRequest,
+			ExistsMock: func() {
+			},
+			MockAct: func() {
 			},
 		},
 		{
@@ -433,11 +398,8 @@ func TestChangePwdHandler(t *testing.T) {
 	}{
 
 		{
-			Name: "Success",
-			Body: `{
-				"username": "johndoe",
-				"password": "Password1234"
-			}`,
+			Name:         "Success",
+			Body:         mocks.ChangePwd,
 			ExpectedCode: http.StatusOK,
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
@@ -454,41 +416,32 @@ func TestChangePwdHandler(t *testing.T) {
 			},
 		},
 		{
-			Name: "Error",
-			Body: `{
-				"username": "johndoe",
-				"password": "Password1234"
-			}`,
+			Name:         "Invalid body",
+			Body:         mocks.InvalidBody,
+			ExpectedCode: http.StatusBadRequest,
+			ExistsMock: func() {
+			},
+			MockAct: func() {
+			},
+		},
+		{
+			Name:         "Invalid password format",
+			Body:         mocks.InvalidPasswordFormat,
+			ExpectedCode: http.StatusBadRequest,
+			ExistsMock: func() {
+			},
+			MockAct: func() {
+			},
+		},
+		{
+			Name:         "Error",
+			Body:         mocks.ChangePwd,
 			ExpectedCode: http.StatusInternalServerError,
 			ExistsMock: func() {
 				mock.ExpectQuery(config.SearchTestQuery).
 					WithArgs("johndoe", 1).
 					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "surname", "username", "email", "password"}).
 						AddRow(1, "John", "Doe", "johndoe", "johndoe@example.com", "Password1234"))
-			},
-			MockAct: func() {
-			},
-		},
-		{
-			Name: "Invalid body request",
-			Body: `{
-				"username": "johndoe",
-				"password": "Password1234
-			}`,
-			ExpectedCode: http.StatusBadRequest,
-			ExistsMock: func() {
-			},
-			MockAct: func() {
-			},
-		},
-		{
-			Name: "Invalid password format",
-			Body: `{
-				"username": "johndoe",
-				"password": "Pass"
-			}`,
-			ExpectedCode: http.StatusBadRequest,
-			ExistsMock: func() {
 			},
 			MockAct: func() {
 			},
@@ -540,7 +493,29 @@ func TestLoginUserHandler(t *testing.T) {
 		MockAct      func()
 	}{
 		{
-			Name: "Invalid Request",
+			Name: "Success",
+			Body: `{
+				"username": "johndoe",
+				"password":"Password1234"
+			}`,
+			ExpectedCode: http.StatusOK,
+			ExistsMock: func() {
+				mock.ExpectQuery(config.SearchTestQuery).
+					WithArgs("johndoe", 1).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "surname", "username", "email", "password"}).
+						AddRow(1, "John", "Doe", "johndoe", "johndoe@example.com", "Password1234"))
+			},
+			MockAct: func() {
+				hashedPwd, _ := encrypter.PasswordEncrypter("Password1234")
+
+				mock.ExpectQuery(config.SearchTestQuery).
+					WithArgs("johndoe", 1).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "password"}).
+						AddRow(1, hashedPwd))
+			},
+		},
+		{
+			Name: "Invalid JSON",
 			Body: `{
 				"username": "johndoe",
 				"password":"Password1234",
@@ -592,28 +567,6 @@ func TestLoginUserHandler(t *testing.T) {
 						AddRow(1, "John", "Doe", "johndoe", "johndoe@example.com", "Password1234"))
 			},
 			MockAct: func() {
-			},
-		},
-		{
-			Name: "Success",
-			Body: `{
-				"username": "johndoe",
-				"password":"Password1234"
-			}`,
-			ExpectedCode: http.StatusOK,
-			ExistsMock: func() {
-				mock.ExpectQuery(config.SearchTestQuery).
-					WithArgs("johndoe", 1).
-					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "surname", "username", "email", "password"}).
-						AddRow(1, "John", "Doe", "johndoe", "johndoe@example.com", "Password1234"))
-			},
-			MockAct: func() {
-				hashedPwd, _ := encrypter.PasswordEncrypter("Password1234")
-
-				mock.ExpectQuery(config.SearchTestQuery).
-					WithArgs("johndoe", 1).
-					WillReturnRows(sqlmock.NewRows([]string{"id", "password"}).
-						AddRow(1, hashedPwd))
 			},
 		},
 	}
