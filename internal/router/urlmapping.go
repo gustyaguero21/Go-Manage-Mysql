@@ -19,11 +19,11 @@ func UrlMapping(r *gin.Engine, conn *gorm.DB) {
 	handler := handlers.NewUserHandler(service)
 
 	api.POST("/login", handler.LoginUserHandler)
+	api.POST("/create", handler.CreateUserHandler)
 
 	protected := api.Group("/")
 	protected.Use(middleware.JWTMiddleware())
 
-	protected.POST("/create", handler.CreateUserHandler)
 	protected.GET("/search", handler.SearchUserHandler)
 	protected.PATCH("/update", handler.UpdateUserHandler)
 	protected.DELETE("/delete", handler.DeleteUserHandler)
