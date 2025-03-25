@@ -31,7 +31,7 @@ TOKEN_VALID_TIME=1 //tiempo expresado en horas
    ```
 2. Ejecuta la aplicación:
    ```sh
-   go run main.go
+   go run cmd/api/main.go
    ```
 
 ## 📌 Funcionalidades
